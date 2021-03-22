@@ -1,0 +1,31 @@
+{
+  "name": "nft-farm-core",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "hardhat compile",
+    "test": "hardhat compile && hardhat test --verbose"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/itamgames/nft-farm-core.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/itamgames/nft-farm-core/issues"
+  },
+  "homepage": "https://github.com/itamgames/nft-farm-core#readme",
+  "dependencies": {
+    "@openzeppelin/contracts": "^3.4.1"
+  },
+  "devDependencies": {
+    "@nomiclabs/hardhat-ethers": "^2.0.2",
+    "@nomiclabs/hardhat-waffle": "^2.0.1",
+    "chai": "^4.3.3",
+    "ethereum-waffle": "^3.3.0",
+    "ethers": "^5.0.32",
+    "hardhat": "^2.1.1"
+  }
+}
