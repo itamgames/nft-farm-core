@@ -36,7 +36,7 @@ contract NFTFarmExchange is Ownable {
     event Exchange(bytes32 sellHash, bytes32 buyHash, address paymentToken, uint256 priceAmount, uint256 paymentAmount, uint256 feeAmount);
     event CancelOrder(bytes32 indexed orderHash);
 
-    constructor(address _team, uint256 _minimumFeePercent) {
+    constructor(address _team, uint256 _minimumFeePercent) public {
         team = _team;
         minimumFeePercent = _minimumFeePercent;
     }
@@ -144,7 +144,7 @@ contract NFTFarmExchange is Ownable {
     }
 
     function createProxy() public {
-        require(proxies[msg.sender].user() == address(0), 'already created proxy');
+        require(address(proxies[msg.sender]) == address(0), 'already created proxy');
         DelegateProxy proxy = new DelegateProxy(msg.sender);
         proxies[msg.sender] = proxy;
     }
