@@ -4,7 +4,7 @@ import '@openzeppelin/contracts/token/ERC721/ERC721.sol';
 import '@openzeppelin/contracts/access/Ownable.sol';
 import '../DelegateProxy.sol';
 
-contract NFTFarmExchange {
+contract INFTFarmExchange {
     mapping(address => DelegateProxy) public proxies;
 }
 
@@ -33,6 +33,6 @@ contract ERC721Tradable is ERC721, Ownable {
     }
 
     function isApprovedForAll(address owner, address operator) public view override returns(bool) {
-        return address(NFTFarmExchange(exchange).proxies(owner)) == operator || super.isApprovedForAll(owner, operator);
+        return address(INFTFarmExchange(exchange).proxies(owner)) == operator || super.isApprovedForAll(owner, operator);
     }
 }
