@@ -2,6 +2,7 @@ pragma solidity 0.7.3;
 
 import '@openzeppelin/contracts/token/ERC721/ERC721.sol';
 import '@openzeppelin/contracts/access/Ownable.sol';
+import '@openzeppelin/contracts/utils/Strings.sol';
 import '../DelegateProxy.sol';
 
 contract INFTFarmExchange {
@@ -11,10 +12,9 @@ contract INFTFarmExchange {
 contract ERC721Tradable is ERC721, Ownable {
     address public exchange;
     uint256 public mintCount;
-    string public baseTokenURI;
 
-    constructor(string memory _name, string memory _symbol, string memory _baseTokenURI, address _exchange) public ERC721(_name, _symbol) {
-        baseTokenURI = _baseTokenURI;
+    constructor(string memory _name, string memory _symbol, string memory _baseURI, address _exchange) public ERC721(_name, _symbol) {
+        _setBaseURI(_baseURI);
         exchange = _exchange;
         mintCount = 0;
     }
@@ -24,12 +24,17 @@ contract ERC721Tradable is ERC721, Ownable {
         _mint(_to, mintCount);
     }
 
-    function changeBaseTokenURI(string memory _baseTokenURI) public onlyOwner {
-        baseTokenURI = _baseTokenURI;
+    function changeBaseURI(string memory _baseURI) public onlyOwner {
+        _setBaseURI(_baseURI);
+    }
+
+    function changeExchange(address _exchange) public onlyOwner {
+        exchange = _exchange;
     }
 
     function tokenURI(uint256 _tokenId) public view override returns (string memory) {
-        return string(abi.encodePacked(baseTokenURI, _tokenId));
+        require(_exists(_tokenId), 'invalid token id');
+        return string(abi.encodePacked(baseURI(), Strings.toString(_tokenId)));
     }
 
     function isApprovedForAll(address owner, address operator) public view override returns(bool) {
