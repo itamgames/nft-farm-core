@@ -13,7 +13,7 @@ contract DelegateProxy {
     }
 
     modifier onlyApprover {
-        require(approves[msg.sender], 'unauthorized');
+        require(approves[msg.sender], 'DelegateProxy: unauthorized');
         _;
     }
 

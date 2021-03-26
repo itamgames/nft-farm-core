@@ -64,32 +64,32 @@ contract NFTFarmExchange is Ownable {
 
     function _exchangeTargetForToken(Order memory _sellOrder, bytes memory _sellerSignature, Order memory _buyOrder, bytes memory _buyerSignature) internal {
         bytes32 sellHash = keccak256(abi.encodePacked(_sellOrder.user, _sellOrder.target, _sellOrder.targetCalldata, _sellOrder.paymentToken, _sellOrder.priceAmount, _sellOrder.feePercent, _sellOrder.expirationBlock, _sellOrder.nonce));
-        require(_validHash(_sellOrder.user, sellHash, _sellerSignature), 'invalid seller signature');
-        require(closedOrders[sellHash] == false, 'closed seller order');
-        require(_sellOrder.expirationBlock == 0 || _sellOrder.expirationBlock < block.timestamp, 'expired seller order');
+        require(_validHash(_sellOrder.user, sellHash, _sellerSignature), 'NFTFarmExchange: invalid seller signature');
+        require(closedOrders[sellHash] == false, 'NFTFarmExchange: closed seller order');
+        require(_sellOrder.expirationBlock == 0 || _sellOrder.expirationBlock < block.timestamp, 'NFTFarmExchange: expired seller order');
 
         bytes32 buyHash = keccak256(abi.encodePacked(_buyOrder.user, _buyOrder.target, _buyOrder.targetCalldata, _buyOrder.paymentToken, _buyOrder.priceAmount, _buyOrder.feePercent, _buyOrder.expirationBlock, _buyOrder.nonce));
-        require(_validHash(_buyOrder.user, buyHash, _buyerSignature), 'invalid buyer signature');
-        require(closedOrders[buyHash] == false, 'closed buyer order');
-        require(_buyOrder.expirationBlock == 0 || _buyOrder.expirationBlock < block.timestamp, 'expired buyer order');
+        require(_validHash(_buyOrder.user, buyHash, _buyerSignature), 'NFTFarmExchange: invalid buyer signature');
+        require(closedOrders[buyHash] == false, 'NFTFarmExchange: closed buyer order');
+        require(_buyOrder.expirationBlock == 0 || _buyOrder.expirationBlock < block.timestamp, 'NFTFarmExchange: expired buyer order');
 
-        require(_sellOrder.user != _buyOrder.user, 'cannot match myself');
-        require(_matchOrder(_sellOrder, _buyOrder), 'not matched order');
+        require(_sellOrder.user != _buyOrder.user, 'NFTFarmExchange: cannot match myself');
+        require(_matchOrder(_sellOrder, _buyOrder), 'NFTFarmExchange: not matched order');
 
-        require(_buyOrder.feePercent >= minimumFeePercent, 'fee percent too low');
+        require(_buyOrder.feePercent >= minimumFeePercent, 'NFTFarmExchange: fee percent too low');
         uint256 priceAmount = _buyOrder.priceAmount;
         uint256 feeAmount = priceAmount.div(100).mul(_buyOrder.feePercent);
         uint256 paymentAmount = priceAmount.sub(feeAmount);
         
         address paymentToken = _buyOrder.paymentToken;
         DelegateProxy buyerProxy = proxies[_buyOrder.user];
-        require(buyerProxy.proxyTransferFrom(paymentToken, _buyOrder.user, _sellOrder.user, paymentAmount), 'failed to send payment amount');
+        require(buyerProxy.proxyTransferFrom(paymentToken, _buyOrder.user, _sellOrder.user, paymentAmount), 'NFTFarmExchange: failed to send payment amount');
         if (feeAmount > 0) {
-            require(buyerProxy.proxyTransferFrom(paymentToken, _buyOrder.user, team, feeAmount), 'failed to send fee');
+            require(buyerProxy.proxyTransferFrom(paymentToken, _buyOrder.user, team, feeAmount), 'NFTFarmExchange: failed to send fee');
         }
 
         DelegateProxy sellerProxy = proxies[_sellOrder.user];
-        require(sellerProxy.proxyCall(_sellOrder.target, _sellOrder.targetCalldata), 'failed to send target');
+        require(sellerProxy.proxyCall(_sellOrder.target, _sellOrder.targetCalldata), 'NFTFarmExchange: failed to send target');
 
         closedOrders[sellHash] = true;
         closedOrders[buyHash] = true;
@@ -109,8 +109,8 @@ contract NFTFarmExchange is Ownable {
         bytes calldata _signature
     ) public {
         bytes32 orderHash = keccak256(abi.encodePacked(_user, _target, _targetCalldata, _paymentToken, _priceAmount, _feePercent, _expirationBlock, _nonce));
-        require(_validHash(_user, orderHash, _signature), 'invalid signature');
-        require(closedOrders[orderHash] == false, 'closed seller order');
+        require(_validHash(_user, orderHash, _signature), 'NFTFarmExchange: invalid signature');
+        require(closedOrders[orderHash] == false, 'NFTFarmExchange: closed seller order');
         closedOrders[orderHash] = false;
         emit CancelOrder(orderHash);
     }
@@ -144,7 +144,7 @@ contract NFTFarmExchange is Ownable {
     }
 
     function createProxy() public {
-        require(address(proxies[msg.sender]) == address(0), 'already created proxy');
+        require(address(proxies[msg.sender]) == address(0), 'NFTFarmExchange: already created proxy');
         DelegateProxy proxy = new DelegateProxy(msg.sender);
         proxies[msg.sender] = proxy;
     }
@@ -154,7 +154,7 @@ contract NFTFarmExchange is Ownable {
     }
 
     function changeMinimumFeePercent(uint8 _minimumFeePercent) public onlyOwner {
-        require(_minimumFeePercent <= 100, 'invalid percent');
+        require(_minimumFeePercent <= 100, 'NFTFarmExchange: invalid percent');
         minimumFeePercent = _minimumFeePercent;
     }
 }

@@ -33,7 +33,7 @@ contract ERC721Tradable is ERC721, Ownable {
     }
 
     function tokenURI(uint256 _tokenId) public view override returns (string memory) {
-        require(_exists(_tokenId), 'invalid token id');
+        require(_exists(_tokenId), 'ERC721Tradable: invalid token id');
         return string(abi.encodePacked(baseURI(), Strings.toString(_tokenId)));
     }
 
