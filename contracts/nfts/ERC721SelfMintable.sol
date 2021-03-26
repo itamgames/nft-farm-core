@@ -13,6 +13,11 @@ contract INFTFarmExchange {
 contract ERC721SelfMintable is ERC721, Ownable {
     address public exchange;
     uint256 public mintCount;
+    // tokenId => lock
+    mapping(uint256 => bool) public locks;
+
+    event Lock(address indexed _to, uint256 indexed _tokenId);
+    event Unlock(address indexed _to, uint256 indexed _tokenId);
 
     constructor(string memory _name, string memory _symbol, string memory _baseURI, address _exchange) public ERC721(_name, _symbol) {
         _setBaseURI(_baseURI);
@@ -28,7 +33,7 @@ contract ERC721SelfMintable is ERC721, Ownable {
     function mintToSelf(uint256 _tokenId, bytes calldata _signature) public {
         bytes32 message = keccak256(abi.encodePacked(msg.sender, _tokenId));
         bytes32 signature = keccak256(abi.encodePacked('\x19Ethereum Signed Message:\n32', message));
-        require(ECDSA.recover(signature, _signature) == owner(), 'invalid signature');
+        require(ECDSA.recover(signature, _signature) == owner(), 'ERC721SelfMintable: invalid signature');
         mintCount++;
         _mint(msg.sender, _tokenId);
     }
@@ -41,8 +46,37 @@ contract ERC721SelfMintable is ERC721, Ownable {
         exchange = _exchange;
     }
 
+    function lock(uint256 _tokenId) public {
+        require(_isApprovedOrOwner(_msgSender(), _tokenId), "ERC721SelfMintable: transfer caller is not owner nor approved");
+        require(locks[_tokenId] == false, 'ERC721SelfMintable: already lock token');
+        locks[_tokenId] = true;
+        emit Lock(msg.sender, _tokenId);
+    }
+
+    function unlock(uint256 _tokenId) public {
+        require(_isApprovedOrOwner(_msgSender(), _tokenId), "ERC721SelfMintable: transfer caller is not owner nor approved");
+        require(locks[_tokenId], 'ERC721SelfMintable: already unlock token');
+        locks[_tokenId] = false;
+        emit Unlock(msg.sender, _tokenId);
+    }
+
+    function transferFrom(address from, address to, uint256 tokenId) public virtual override {
+        require(locks[tokenId] == false, 'ERC721SelfMintable: lock token');
+        super.transferFrom(from, to, tokenId);
+    }
+
+    function safeTransferFrom(address from, address to, uint256 tokenId) public virtual override {
+        require(locks[tokenId] == false, 'ERC721SelfMintable: lock token');
+        super.safeTransferFrom(from, to, tokenId);
+    }
+
+    function safeTransferFrom(address from, address to, uint256 tokenId, bytes memory _data) public virtual override {
+        require(locks[tokenId] == false, 'ERC721SelfMintable: lock token');
+        super.safeTransferFrom(from, to, tokenId, _data);
+    }
+
     function tokenURI(uint256 _tokenId) public view override returns (string memory) {
-        require(_exists(_tokenId), 'invalid token id');
+        require(_exists(_tokenId), 'ERC721: invalid token id');
         return string(abi.encodePacked(baseURI(), Strings.toString(_tokenId)));
     }
 

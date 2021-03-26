@@ -20,6 +20,12 @@ contract ERC1155SelfMintable is ERC1155, Ownable {
     string public baseURI;
     mapping(uint256 => uint256) supply;
 
+    // token owner => (token id => lock amount)
+    mapping(address => mapping(uint256 => uint256)) public locks;
+
+    event Lock(address _to, uint256 id, uint256 lockAmount, uint256 totalLockAmount);
+    event Unlock(address _to, uint256 id, uint256 unlockAmount, uint256 totalUnlockAmount);
+
     constructor(string memory _name, string memory _symbol, string memory _baseURI, address _exchange) public ERC1155(_baseURI) {
         name = _name;
         symbol = _symbol;
@@ -43,7 +49,7 @@ contract ERC1155SelfMintable is ERC1155, Ownable {
     function mintToSelf(uint256 id, uint256 amount, bytes memory data, bytes calldata _signature) public {
         bytes32 message = keccak256(abi.encodePacked(msg.sender, id, amount, data));
         bytes32 signature = keccak256(abi.encodePacked('\x19Ethereum Signed Message:\n32', message));
-        require(ECDSA.recover(signature, _signature) == owner(), 'invalid signature');
+        require(ECDSA.recover(signature, _signature) == owner(), 'ERC1155SelfMintable: invalid signature');
         supply[id] = supply[id].add(amount);
         _mint(msg.sender, id, amount, data);
     }
@@ -60,7 +66,7 @@ contract ERC1155SelfMintable is ERC1155, Ownable {
     function mintBatchToSelf(uint256[] memory ids, uint256[] memory amounts, bytes memory data, bytes calldata _signature) public {
         bytes32 message = keccak256(abi.encodePacked(msg.sender, ids, amounts, data));
         bytes32 signature = keccak256(abi.encodePacked('\x19Ethereum Signed Message:\n32', message));
-        require(ECDSA.recover(signature, _signature) == owner(), 'invalid signature');
+        require(ECDSA.recover(signature, _signature) == owner(), 'ERC1155SelfMintable: invalid signature');
 
         for (uint i = 0; i < ids.length; i++) {
             uint256 id = ids[i];
@@ -68,6 +74,37 @@ contract ERC1155SelfMintable is ERC1155, Ownable {
         }
 
         _mintBatch(msg.sender, ids, amounts, data);
+    }
+
+    function lock(uint256 id, uint256 amount) public {
+        require(amount > 0, 'ERC1155SelfMintable: amount have to greater than 0');
+        uint256 balanceAmount = balanceOf(msg.sender, id);
+        uint256 lockAmount = locks[msg.sender][id];
+        require(balanceAmount.sub(lockAmount) >= amount, 'ERC1155SelfMintable: overbalance lock amount');
+        uint256 totalLockAmount = lockAmount.add(amount);
+        locks[msg.sender][id] = totalLockAmount;
+        Lock(msg.sender, id, amount, totalLockAmount);
+    }
+
+    function unlock(uint256 id, uint256 amount) public {
+        require(amount > 0, 'ERC1155SelfMintable: amount have to greater than 0');
+        uint256 lockAmount = locks[msg.sender][id];
+        uint256 totalUnlockAmount = lockAmount.sub(amount);
+        require(totalUnlockAmount >= 0, 'ERC1155SelfMintable: overbalance unlock amount');
+        locks[msg.sender][id] = totalUnlockAmount;
+        Unlock(msg.sender, id, amount, totalUnlockAmount);
+    }
+
+    function safeTransferFrom(address from, address to, uint256 id, uint256 amount, bytes memory data) public virtual override {
+        require(locks[msg.sender][id] >= amount, 'ERC1155SelfMintable: lock token');
+        super.safeTransferFrom(from, to, id, amount, data);
+    }
+
+    function safeBatchTransferFrom(address from, address to, uint256[] memory ids, uint256[] memory amounts, bytes memory data) public virtual override {
+        for (uint i = 0; i < ids.length; i++) {
+            require(locks[msg.sender][ids[i]] >= amounts[i], 'ERC1155SelfMintable: lock token');
+        }
+        super.safeBatchTransferFrom(from, to, ids, amounts, data);
     }
 
     function uri(uint256 _id) external view virtual override returns (string memory) {
