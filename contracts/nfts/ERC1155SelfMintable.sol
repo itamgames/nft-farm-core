@@ -19,6 +19,7 @@ contract ERC1155SelfMintable is ERC1155, Ownable {
     address public exchange;
     string public baseURI;
     mapping(uint256 => uint256) supply;
+    mapping(bytes => bool) minted;
 
     // token owner => (token id => lock amount)
     mapping(address => mapping(uint256 => uint256)) public locks;
@@ -47,11 +48,13 @@ contract ERC1155SelfMintable is ERC1155, Ownable {
     }
 
     function mintToSelf(uint256 id, uint256 amount, bytes memory data, bytes calldata _signature) public {
+        require(minted[_signature] == false, 'ERC1155SelfMintable: already mint signature');
         bytes32 message = keccak256(abi.encodePacked(msg.sender, id, amount, data));
         bytes32 signature = keccak256(abi.encodePacked('\x19Ethereum Signed Message:\n32', message));
         require(ECDSA.recover(signature, _signature) == owner(), 'ERC1155SelfMintable: invalid signature');
         supply[id] = supply[id].add(amount);
         _mint(msg.sender, id, amount, data);
+        minted[_signature] = true;
     }
 
     function mintBatch(address to, uint256[] memory ids, uint256[] memory amounts, bytes memory data) public onlyOwner {
