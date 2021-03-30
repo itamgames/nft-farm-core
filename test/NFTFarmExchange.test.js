@@ -201,7 +201,6 @@ describe('NFT Farm Exchange', function() {
             priceAmount,
             feePercent,
             [this.sellerB.address, this.buyerB.address],
-            // TODO: 
             [
                 (new ethers.utils.Interface(['function transferFrom(address from, address to, uint256 tokenId)'])).encodeFunctionData('transferFrom', [this.sellerB.address, zeroAddress, 0]),
                 (new ethers.utils.Interface(['function transferFrom(address from, address to, uint256 tokenId)'])).encodeFunctionData('transferFrom', ['0x1111111111111111111111111111111111111111', zeroAddress, 0])
