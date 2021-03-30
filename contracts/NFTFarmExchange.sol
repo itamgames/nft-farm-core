@@ -47,22 +47,23 @@ contract NFTFarmExchange is Ownable {
         address _paymentToken,
         uint256 _priceAmount,
         uint256 _feePercent,
-        address _seller,
-        address _buyer,
+        address[2] calldata _users,
+        bytes[2] calldata _replacementCalldatas,
         uint256[2] calldata _expirationBlocks,
         uint256[2] calldata _nonces,
         bytes[2] calldata _signatures
     ) public {
         // prevent stack limit error
         _exchangeTargetForToken(
-            Order(_seller, _target, _targetCalldata, _paymentToken, _priceAmount, _feePercent, _expirationBlocks[0], _nonces[0]),
+            Order(_users[0], _target, _targetCalldata, _paymentToken, _priceAmount, _feePercent, _expirationBlocks[0], _nonces[0]),
             _signatures[0],
-            Order(_buyer, _target, _targetCalldata, _paymentToken, _priceAmount, _feePercent, _expirationBlocks[1], _nonces[1]),
-            _signatures[1]
+            Order(_users[1], _target, _targetCalldata, _paymentToken, _priceAmount, _feePercent, _expirationBlocks[1], _nonces[1]),
+            _signatures[1],
+            _replacementCalldatas
         );
     }
 
-    function _exchangeTargetForToken(Order memory _sellOrder, bytes memory _sellerSignature, Order memory _buyOrder, bytes memory _buyerSignature) internal {
+    function _exchangeTargetForToken(Order memory _sellOrder, bytes memory _sellerSignature, Order memory _buyOrder, bytes memory _buyerSignature, bytes[2] calldata _replacementCalldatas) internal {
         bytes32 sellHash = keccak256(abi.encodePacked(_sellOrder.user, _sellOrder.target, _sellOrder.targetCalldata, _sellOrder.paymentToken, _sellOrder.priceAmount, _sellOrder.feePercent, _sellOrder.expirationBlock, _sellOrder.nonce));
         require(_validHash(_sellOrder.user, sellHash, _sellerSignature), 'NFTFarmExchange: invalid seller signature');
         require(closedOrders[sellHash] == false, 'NFTFarmExchange: closed seller order');
@@ -88,6 +89,10 @@ contract NFTFarmExchange is Ownable {
             require(buyerProxy.proxyTransferFrom(paymentToken, _buyOrder.user, team, feeAmount), 'NFTFarmExchange: failed to send fee');
         }
 
+        if (_replacementCalldatas[0].length > 0 && _replacementCalldatas[1].length > 0) {
+            _replaceBytes(_sellOrder.targetCalldata, _replacementCalldatas[0], _replacementCalldatas[1]);
+        }
+
         DelegateProxy sellerProxy = proxies[_sellOrder.user];
         require(sellerProxy.proxyCall(_sellOrder.target, _sellOrder.targetCalldata), 'NFTFarmExchange: failed to send target');
 
@@ -111,7 +116,7 @@ contract NFTFarmExchange is Ownable {
         bytes32 orderHash = keccak256(abi.encodePacked(_user, _target, _targetCalldata, _paymentToken, _priceAmount, _feePercent, _expirationBlock, _nonce));
         require(_validHash(_user, orderHash, _signature), 'NFTFarmExchange: invalid signature');
         require(closedOrders[orderHash] == false, 'NFTFarmExchange: closed seller order');
-        closedOrders[orderHash] = false;
+        closedOrders[orderHash] = true;
         emit CancelOrder(orderHash);
     }
 
@@ -140,6 +145,14 @@ contract NFTFarmExchange is Ownable {
             addr := add(a, /*BYTES_HEADER_SIZE*/32)
             addr2 := add(b, /*BYTES_HEADER_SIZE*/32)
             equal := eq(keccak256(addr, len), keccak256(addr2, len))
+        }
+    }
+
+    function _replaceBytes(bytes memory target, bytes memory source, bytes memory mask) internal pure {
+        for (uint256 i = 0; i < source.length; i++) {
+            if (mask[i] > 0) {
+                target[i] = source[i];
+            }
         }
     }
 
