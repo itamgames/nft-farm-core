@@ -31,7 +31,7 @@ contract ERC721SelfMintable is ERC721, Ownable {
     }
 
     function mintToSelf(uint256 _tokenId, bytes calldata _signature) public {
-        bytes32 message = keccak256(abi.encodePacked(msg.sender, _tokenId));
+        bytes32 message = keccak256(abi.encodePacked(address(this), msg.sender, _tokenId));
         bytes32 signature = keccak256(abi.encodePacked('\x19Ethereum Signed Message:\n32', message));
         require(ECDSA.recover(signature, _signature) == owner(), 'ERC721SelfMintable: invalid signature');
         mintCount++;
