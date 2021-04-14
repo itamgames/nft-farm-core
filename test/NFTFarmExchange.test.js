@@ -43,10 +43,31 @@ describe('NFT Farm Exchange', function() {
         const priceAmount = web3.utils.toWei('100');
         const feePercent = '10';
         const expirationBlocks = ['0', '0'];
+        const replacementCalldatas = ['0x0000000000000000000000000000000000000000', '0x0000000000000000000000000000000000000000'];
         const nonces = [new Date().getTime(), new Date().getTime()];
         
-        const sellHash = soliditySha3(this.sellerA.address, target, targetCalldata, paymentToken, priceAmount, feePercent, expirationBlocks[0], nonces[0]);
-        const buyHash = soliditySha3(this.buyerA.address, target, targetCalldata, paymentToken, priceAmount, feePercent, expirationBlocks[1], nonces[1]);
+        const sellHash = soliditySha3(
+            this.sellerA.address,
+            target,
+            targetCalldata,
+            replacementCalldatas[0],
+            paymentToken,
+            priceAmount,
+            feePercent,
+            expirationBlocks[0],
+            nonces[0],
+        );
+        const buyHash = soliditySha3(
+            this.buyerA.address,
+            target,
+            targetCalldata,
+            replacementCalldatas[0],
+            paymentToken,
+            priceAmount,
+            feePercent,
+            expirationBlocks[1],
+            nonces[1],
+        );
         const signatures = [
             await this.sellerA._signer.signMessage(ethers.utils.arrayify(sellHash)),
             await this.buyerA._signer.signMessage(ethers.utils.arrayify(buyHash)),
@@ -68,7 +89,7 @@ describe('NFT Farm Exchange', function() {
             priceAmount,
             feePercent,
             [this.sellerA.address, this.buyerA.address],
-            [0x0, 0x0],
+            replacementCalldatas,
             expirationBlocks,
             nonces,
             signatures,
@@ -89,10 +110,31 @@ describe('NFT Farm Exchange', function() {
         const priceAmount = web3.utils.toWei('100');
         const feePercent = '10';
         const expirationBlocks = ['0', '0'];
+        const replacementCalldatas = ['0x0000000000000000000000000000000000000000', '0x0000000000000000000000000000000000000000'];
         const nonces = [new Date().getTime(), new Date().getTime()];
         
-        const sellHash = soliditySha3(this.sellerB.address, target, targetCalldata, paymentToken, priceAmount, feePercent, expirationBlocks[0], nonces[0]);
-        const buyHash = soliditySha3(this.buyerB.address, target, targetCalldata, paymentToken, priceAmount, feePercent, expirationBlocks[1], nonces[1]);
+        const sellHash = soliditySha3(
+            this.sellerB.address,
+            target,
+            targetCalldata,
+            replacementCalldatas[0],
+            paymentToken,
+            priceAmount,
+            feePercent,
+            expirationBlocks[0],
+            nonces[0],
+        );
+        const buyHash = soliditySha3(
+            this.buyerB.address,
+            target,
+            targetCalldata,
+            replacementCalldatas[0],
+            paymentToken,
+            priceAmount,
+            feePercent,
+            expirationBlocks[1],
+            nonces[1],
+        );
         const signatures = [
             await this.sellerB._signer.signMessage(ethers.utils.arrayify(sellHash)),
             await this.buyerB._signer.signMessage(ethers.utils.arrayify(buyHash)),
@@ -114,7 +156,7 @@ describe('NFT Farm Exchange', function() {
             priceAmount,
             feePercent,
             [this.sellerB.address, this.buyerB.address],
-            [0x0, 0x0],
+            replacementCalldatas,
             expirationBlocks,
             nonces,
             signatures,
@@ -130,21 +172,53 @@ describe('NFT Farm Exchange', function() {
         await this.ERC721Tradable.mintTo(this.sellerA.address); 
 
         const target = this.ERC721Tradable.address;
-        const targetCalldata = (new ethers.utils.Interface(['function transferFrom(address from, address to, uint256 tokenId)'])).encodeFunctionData('transferFrom', [this.sellerA.address, this.buyerA.address, tokenId]);
         const paymentToken = this.BEP20.address;
         const priceAmount = web3.utils.toWei('100');
         const feePercent = '10';
         const expirationBlocks = ['0', '0'];
+        const calldataAndcalldataMask = [
+            (new ethers.utils.Interface(['function transferFrom(address from, address to, uint256 tokenId)'])).encodeFunctionData('transferFrom', [this.sellerA.address, this.buyerA.address, tokenId]),
+            '0x0000000000000000000000000000000000000000'];
         const nonces = [new Date().getTime(), new Date().getTime()];
         
-        const sellHash = soliditySha3(this.sellerA.address, target, targetCalldata, paymentToken, priceAmount, feePercent, expirationBlocks[0], nonces[0]);
-        const buyHash = soliditySha3(this.buyerA.address, target, targetCalldata, paymentToken, priceAmount, feePercent, expirationBlocks[1], nonces[1]);
+        const sellHash = soliditySha3(
+            this.sellerA.address,
+            target,
+            calldataAndcalldataMask[0],
+            calldataAndcalldataMask[1],
+            paymentToken,
+            priceAmount,
+            feePercent,
+            expirationBlocks[0],
+            nonces[0],
+        );
+        const buyHash = soliditySha3(
+            this.buyerA.address,
+            target,
+            calldataAndcalldataMask[0],
+            calldataAndcalldataMask[1],
+            paymentToken,
+            priceAmount,
+            feePercent,
+            expirationBlocks[1],
+            nonces[1],
+        );
         const signatures = [
             await this.sellerA._signer.signMessage(ethers.utils.arrayify(sellHash)),
             await this.buyerA._signer.signMessage(ethers.utils.arrayify(buyHash)),
         ];
 
-        await this.NFTFarmExchange.connect(this.sellerA).cancelOrder(target, targetCalldata, paymentToken, priceAmount, feePercent, this.sellerA.address, expirationBlocks[0], nonces[0], signatures[0]);
+        await this.NFTFarmExchange.connect(this.sellerA).cancelOrder(
+            target,
+            calldataAndcalldataMask,
+            paymentToken,
+            priceAmount,
+            feePercent,
+            this.sellerA.address,
+            expirationBlocks[0],
+            nonces[0],
+            signatures[0]
+        );
 
         const sellerProxy = await this.NFTFarmExchange.proxies(this.sellerA.address);
         const buyerProxy = await this.NFTFarmExchange.proxies(this.buyerA.address);
@@ -154,12 +228,12 @@ describe('NFT Farm Exchange', function() {
 
         expect(this.NFTFarmExchange.connect(this.sellerA).exchange(
             target,
-            targetCalldata,
+            calldataAndcalldataMask[0],
             paymentToken,
             priceAmount,
             feePercent,
             [this.sellerA.address, this.buyerA.address],
-            [0x0, 0x0],
+            [calldataAndcalldataMask[1], calldataAndcalldataMask[1]],
             expirationBlocks,
             nonces,
             signatures,
@@ -175,14 +249,37 @@ describe('NFT Farm Exchange', function() {
 
         const target = this.ERC721Tradable.address;
         const targetCalldata = (new ethers.utils.Interface(['function transferFrom(address from, address to, uint256 tokenId)'])).encodeFunctionData('transferFrom', [zeroAddress, this.buyerB.address, tokenId]);
+        const targetCalldataMask = (new ethers.utils.Interface(['function transferFrom(address from, address to, uint256 tokenId)'])).encodeFunctionData('transferFrom', ['0xffffffffffffffffffffffffffffffffffffffff', zeroAddress, 0]);
+        const targetCalldataReplacement = (new ethers.utils.Interface(['function transferFrom(address from, address to, uint256 tokenId)'])).encodeFunctionData('transferFrom', [this.sellerB.address, zeroAddress, 0]);
         const paymentToken = this.BEP20.address;
         const priceAmount = web3.utils.toWei('100');
         const feePercent = '10';
         const expirationBlocks = ['0', '0'];
         const nonces = [new Date().getTime(), new Date().getTime()];
         
-        const sellHash = soliditySha3(this.sellerB.address, target, targetCalldata, paymentToken, priceAmount, feePercent, expirationBlocks[0], nonces[0]);
-        const buyHash = soliditySha3(this.buyerB.address, target, targetCalldata, paymentToken, priceAmount, feePercent, expirationBlocks[1], nonces[1]);
+        const sellHash = soliditySha3(
+            this.sellerB.address,
+            target,
+            targetCalldata,
+            targetCalldataMask,
+            paymentToken,
+            priceAmount,
+            feePercent,
+            expirationBlocks[0],
+            nonces[0]
+        );
+        const buyHash = soliditySha3(
+            this.buyerB.address,
+            target,
+            targetCalldata,
+            targetCalldataMask,
+            paymentToken,
+            priceAmount,
+            feePercent,
+            expirationBlocks[1],
+            nonces[1]
+        );
+
         const signatures = [
             await this.sellerB._signer.signMessage(ethers.utils.arrayify(sellHash)),
             await this.buyerB._signer.signMessage(ethers.utils.arrayify(buyHash)),
@@ -202,8 +299,8 @@ describe('NFT Farm Exchange', function() {
             feePercent,
             [this.sellerB.address, this.buyerB.address],
             [
-                (new ethers.utils.Interface(['function transferFrom(address from, address to, uint256 tokenId)'])).encodeFunctionData('transferFrom', [this.sellerB.address, zeroAddress, 0]),
-                (new ethers.utils.Interface(['function transferFrom(address from, address to, uint256 tokenId)'])).encodeFunctionData('transferFrom', ['0x1111111111111111111111111111111111111111', zeroAddress, 0])
+                targetCalldataMask,
+                targetCalldataReplacement,
             ],
             expirationBlocks,
             nonces,
