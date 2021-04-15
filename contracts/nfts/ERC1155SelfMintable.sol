@@ -67,7 +67,7 @@ contract ERC1155SelfMintable is ERC1155, Ownable {
     }
 
     function mintBatchToSelf(uint256[] memory ids, uint256[] memory amounts, bytes memory data, bytes calldata _signature) public {
-        bytes32 message = keccak256(abi.encodePacked(msg.sender, ids, amounts, data));
+        bytes32 message = keccak256(abi.encodePacked(address(this), msg.sender, ids, amounts, data));
         bytes32 signature = keccak256(abi.encodePacked('\x19Ethereum Signed Message:\n32', message));
         require(ECDSA.recover(signature, _signature) == owner(), 'ERC1155SelfMintable: invalid signature');
 
