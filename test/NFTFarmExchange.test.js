@@ -214,7 +214,6 @@ describe('NFT Farm Exchange', function() {
             paymentToken,
             priceAmount,
             feePercent,
-            this.sellerA.address,
             expirationBlocks[0],
             nonces[0],
             signatures[0]

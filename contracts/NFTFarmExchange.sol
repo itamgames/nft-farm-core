@@ -109,13 +109,12 @@ contract NFTFarmExchange is Ownable {
         address _paymentToken,
         uint256 _priceAmount,
         uint256 _feePercent,
-        address _user,
         uint256 _expirationBlock,
         uint256 _nonce,
         bytes calldata _signature
     ) public {
-        bytes32 orderHash = keccak256(abi.encodePacked(_user, _target, _targetCalldatas[0], _targetCalldatas[1], _paymentToken, _priceAmount, _feePercent, _expirationBlock, _nonce));
-        require(_validHash(_user, orderHash, _signature), 'NFTFarmExchange: invalid signature');
+        bytes32 orderHash = keccak256(abi.encodePacked(msg.sender, _target, _targetCalldatas[0], _targetCalldatas[1], _paymentToken, _priceAmount, _feePercent, _expirationBlock, _nonce));
+        require(_validHash(msg.sender, orderHash, _signature), 'NFTFarmExchange: invalid signature');
         require(closedOrders[orderHash] == false, 'NFTFarmExchange: closed seller order');
         closedOrders[orderHash] = true;
         emit CancelOrder(orderHash);
