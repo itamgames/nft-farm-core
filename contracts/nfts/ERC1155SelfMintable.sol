@@ -94,6 +94,7 @@ contract ERC1155SelfMintable is ERC1155, Ownable {
         uint256 lockAmount = locks[msg.sender][id];
         uint256 totalUnlockAmount = lockAmount.sub(amount);
         require(totalUnlockAmount >= 0, 'ERC1155SelfMintable: overbalance unlock amount');
+        require(timestamp <= block.timestamp, 'ERC1155SelfMintable: expired');
 
         bytes32 message = keccak256(abi.encodePacked(address(this), msg.sender, id, amount, timestamp, 'unlock'));
         bytes32 sig = keccak256(abi.encodePacked('\x19Ethereum Signed Message:\n32', message));

@@ -56,6 +56,7 @@ contract ERC721SelfMintable is ERC721, Ownable {
     function unlock(uint256 _tokenId, uint256 _timestamp, bytes calldata _signature) public {
         require(_isApprovedOrOwner(_msgSender(), _tokenId), "ERC721SelfMintable: transfer caller is not owner nor approved");
         require(locks[_tokenId], 'ERC721SelfMintable: already unlock token');
+        require(_timestamp <= block.timestamp, 'ERC721SelfMintable: expired');
 
         bytes32 message = keccak256(abi.encodePacked(address(this), msg.sender, _tokenId, _timestamp, 'unlock'));
         bytes32 signature = keccak256(abi.encodePacked('\x19Ethereum Signed Message:\n32', message));
