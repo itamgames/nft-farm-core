@@ -54,6 +54,8 @@ contract NFTFarmExchange is Ownable {
         uint256[2] calldata _nonces,
         bytes[2] calldata _signatures
     ) public {
+        require(_users[0] == msg.sender || _users[1] == msg.sender, 'NFTFarmExchange: Unauthorized');
+
         // prevent stack limit error
         _exchangeTargetForToken(
             Order(_users[0], _target, _targetCalldata, _replacementCalldatas[0], _paymentToken, _priceAmount, _feePercent, _expirationBlocks[0], _nonces[0]),
