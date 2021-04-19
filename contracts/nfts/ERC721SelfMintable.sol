@@ -53,9 +53,14 @@ contract ERC721SelfMintable is ERC721, Ownable {
         emit Lock(msg.sender, _tokenId);
     }
 
-    function unlock(uint256 _tokenId) public {
+    function unlock(uint256 _tokenId, uint256 _timestamp, bytes calldata _signature) public {
         require(_isApprovedOrOwner(_msgSender(), _tokenId), "ERC721SelfMintable: transfer caller is not owner nor approved");
         require(locks[_tokenId], 'ERC721SelfMintable: already unlock token');
+
+        bytes32 message = keccak256(abi.encodePacked(address(this), msg.sender, _tokenId, _timestamp, 'unlock'));
+        bytes32 signature = keccak256(abi.encodePacked('\x19Ethereum Signed Message:\n32', message));
+        require(ECDSA.recover(signature, _signature) == owner(), 'ERC721SelfMintable: invalid signature');
+
         locks[_tokenId] = false;
         emit Unlock(msg.sender, _tokenId);
     }

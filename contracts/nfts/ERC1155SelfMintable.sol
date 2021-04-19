@@ -89,11 +89,16 @@ contract ERC1155SelfMintable is ERC1155, Ownable {
         Lock(msg.sender, id, amount, totalLockAmount);
     }
 
-    function unlock(uint256 id, uint256 amount) public {
+    function unlock(uint256 id, uint256 amount, uint256 timestamp, bytes calldata signature) public {
         require(amount > 0, 'ERC1155SelfMintable: amount have to greater than 0');
         uint256 lockAmount = locks[msg.sender][id];
         uint256 totalUnlockAmount = lockAmount.sub(amount);
         require(totalUnlockAmount >= 0, 'ERC1155SelfMintable: overbalance unlock amount');
+
+        bytes32 message = keccak256(abi.encodePacked(address(this), msg.sender, id, amount, timestamp, 'unlock'));
+        bytes32 sig = keccak256(abi.encodePacked('\x19Ethereum Signed Message:\n32', message));
+        require(ECDSA.recover(sig, signature) == owner(), 'ERC1155SelfMintable: invalid signature');
+
         locks[msg.sender][id] = totalUnlockAmount;
         Unlock(msg.sender, id, amount, totalUnlockAmount);
     }
