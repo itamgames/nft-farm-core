@@ -15,6 +15,7 @@ contract ERC721SelfMintable is ERC721, Ownable {
     uint256 public mintCount;
     // tokenId => lock
     mapping(uint256 => bool) public locks;
+    mapping(bytes32 => bool) public usedHash;
 
     event Lock(address indexed _to, uint256 indexed _tokenId);
     event Unlock(address indexed _to, uint256 indexed _tokenId);
@@ -59,10 +60,13 @@ contract ERC721SelfMintable is ERC721, Ownable {
         require(_timestamp <= block.timestamp, 'ERC721SelfMintable: expired');
 
         bytes32 message = keccak256(abi.encodePacked(address(this), msg.sender, _tokenId, _timestamp, 'unlock'));
+        require(usedHash[message] == false, 'ERC721SelfMintable: already used hash');
+
         bytes32 signature = keccak256(abi.encodePacked('\x19Ethereum Signed Message:\n32', message));
         require(ECDSA.recover(signature, _signature) == owner(), 'ERC721SelfMintable: invalid signature');
 
         locks[_tokenId] = false;
+        usedHash[message] = true;
         emit Unlock(msg.sender, _tokenId);
     }
 

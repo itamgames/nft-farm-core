@@ -20,6 +20,7 @@ contract ERC1155SelfMintable is ERC1155, Ownable {
     string public baseURI;
     mapping(uint256 => uint256) supply;
     mapping(bytes => bool) minted;
+    mapping(bytes32 => bool) usedHash;
 
     // token owner => (token id => lock amount)
     mapping(address => mapping(uint256 => uint256)) public locks;
@@ -97,10 +98,13 @@ contract ERC1155SelfMintable is ERC1155, Ownable {
         require(timestamp <= block.timestamp, 'ERC1155SelfMintable: expired');
 
         bytes32 message = keccak256(abi.encodePacked(address(this), msg.sender, id, amount, timestamp, 'unlock'));
+        require(usedHash[message] == false, 'ERC721SelfMintable: already used hash');
+
         bytes32 sig = keccak256(abi.encodePacked('\x19Ethereum Signed Message:\n32', message));
         require(ECDSA.recover(sig, signature) == owner(), 'ERC1155SelfMintable: invalid signature');
 
         locks[msg.sender][id] = totalUnlockAmount;
+        usedHash[message] = true;
         Unlock(msg.sender, id, amount, totalUnlockAmount);
     }
 
