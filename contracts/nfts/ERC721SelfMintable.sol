@@ -23,9 +23,11 @@ contract ERC721SelfMintable is ERC721, Ownable {
 
     // tokenId => uri path
     mapping(uint256 => string) public tokenURIPaths;
-
+    
     event Lock(address indexed _to, uint256 indexed _tokenId);
     event Unlock(address indexed _to, uint256 indexed _tokenId);
+    event UseNFT(address indexed _to, uint256 indexed _tokenId);
+    event EmergencyBurn(address indexed _owner, uint256 indexed _tokenId);
 
     modifier onlyMinter {
         require(minters[msg.sender], 'ERC721SelfMintable: no authorized');
@@ -83,6 +85,13 @@ contract ERC721SelfMintable is ERC721, Ownable {
         locks[_tokenId] = false;
         usedHash[message] = true;
         emit Unlock(msg.sender, _tokenId);
+    }
+
+    function use(uint256 _tokenId) public {
+        require(ownerOf(_tokenId) == _msgSender(), "ERC721SelfMintable: transfer caller is not owner nor approved");
+        _burn(_tokenId);
+        emit UseNFT(_msgSender(), _tokenId);
+
     }
 
     function emergencyBurn(uint256 _tokenId) public onlyOwner {
